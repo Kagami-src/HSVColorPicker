@@ -11,5 +11,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         pickerView = findViewById(R.id.picker) as HSVColorPicker
+        pickerView.barWidth=resources.getDimension(R.dimen.barwidth)
+        pickerView.sliderRadius=resources.getDimension(R.dimen.sliderradius)
+        pickerView.perviewRadius=resources.getDimension(R.dimen.perviewradius)
+        pickerView.setOnColorPickedListener {
+            findViewById(R.id.activity_main).setBackgroundColor(it)
+        }
     }
+
+
 }

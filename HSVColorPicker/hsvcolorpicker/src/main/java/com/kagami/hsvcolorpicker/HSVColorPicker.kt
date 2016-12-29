@@ -10,13 +10,21 @@ import android.view.View
  * Created by sinceredeveloper on 16/12/28.
  */
 class HSVColorPicker : View {
-    val colors = IntArray(360)
+    private val colors = IntArray(360)
+    private val paint=Paint(Paint.ANTI_ALIAS_FLAG)
+    private val barRectF=RectF()
+    private var onColorPickedListener:OnColorPickedListener?=null
+    private var isShowPreview=false
+
     var color = Color.BLACK
+        private set
+
     var barWidth=20f
-    val barRectF=RectF()
     var sliderRadius=20f
+    var perviewRadius=30f
     var sliderPaddingTop:Float=0f
-    val paint=Paint(Paint.ANTI_ALIAS_FLAG)
+
+
 
     constructor(context: Context) : super(context) {
         init()
@@ -27,6 +35,23 @@ class HSVColorPicker : View {
     }
     constructor(context: Context, attrs: AttributeSet,defStyleAttr: Int) : super(context, attrs,defStyleAttr) {
         init()
+    }
+
+    /**
+     * for kotlin
+     */
+    fun setOnColorPickedListener(l:(Int)->Unit){
+        onColorPickedListener=object :OnColorPickedListener{
+            override fun onColorPicker(color: Int) {
+                l(color)
+            }
+        }
+    }
+    /**
+     * for java
+     */
+    fun setOnColorPickedListener(l:OnColorPickedListener){
+        onColorPickedListener=l
     }
 
 
@@ -42,10 +67,10 @@ class HSVColorPicker : View {
     val clipPath=Path()
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        barRectF.left=width-paddingRight-barWidth/2-+sliderRadius
+        barRectF.left=width-paddingRight-barWidth/2-Math.max(sliderRadius,perviewRadius)
         barRectF.right=barRectF.left+barWidth
-        barRectF.top = paddingTop.toFloat()+sliderRadius
-        barRectF.bottom = (height-paddingBottom).toFloat()-sliderRadius
+        barRectF.top = paddingTop.toFloat()+Math.max(sliderRadius,perviewRadius)
+        barRectF.bottom = (height-paddingBottom).toFloat()-Math.max(sliderRadius,perviewRadius)
         val unit=barRectF.height()/360
         clipPath.reset()
         clipPath.addRoundRect(barRectF,barWidth/2,barWidth/2,Path.Direction.CCW)
@@ -56,9 +81,11 @@ class HSVColorPicker : View {
             canvas.drawRect(barRectF.left,barRectF.top+unit*i,barRectF.right,barRectF.top+unit*i+unit,paint)
         }
         canvas.restore()
-        val index = (sliderPaddingTop/barRectF.height() * 359).toInt()
-        paint.color=colors[index]
+        paint.color=color
         canvas.drawCircle(barRectF.centerX(),sliderPaddingTop+barRectF.top,sliderRadius,paint)
+        if(isShowPreview){
+            canvas.drawCircle((barRectF.centerX()-sliderRadius)/2,sliderPaddingTop+barRectF.top,perviewRadius,paint)
+        }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -68,8 +95,14 @@ class HSVColorPicker : View {
         if(y>barRectF.height())
             y=barRectF.height()
         sliderPaddingTop=y
+        val index = (sliderPaddingTop/barRectF.height() * 359).toInt()
+        color=colors[index]
         invalidate()
-
+        onColorPickedListener?.onColorPicker(color)
+        if(event.action==MotionEvent.ACTION_CANCEL || event.action==MotionEvent.ACTION_UP)
+            isShowPreview=false
+        else
+            isShowPreview=true
         return true
     }
 
